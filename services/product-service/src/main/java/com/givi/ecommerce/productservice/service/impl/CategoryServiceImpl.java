@@ -1,6 +1,7 @@
 package com.givi.ecommerce.productservice.service.impl;
 
-import com.givi.ecommerce.productservice.entity.Category;
+import com.givi.ecommerce.productservice.dto.CategoryResponse;
+import com.givi.ecommerce.productservice.mapper.CategoryMapper;
 import com.givi.ecommerce.productservice.repository.CategoryRepository;
 import com.givi.ecommerce.productservice.service.CategoryService;
 import org.springframework.stereotype.Service;
@@ -12,18 +13,27 @@ import java.util.Optional;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
 
-    public CategoryServiceImpl(CategoryRepository categoryRepository) {
+    public CategoryServiceImpl(
+            CategoryRepository categoryRepository,
+            CategoryMapper categoryMapper
+    ) {
         this.categoryRepository = categoryRepository;
+        this.categoryMapper = categoryMapper;
     }
 
     @Override
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public List<CategoryResponse> getAllCategories() {
+        return categoryRepository.findAll()
+                .stream()
+                .map(categoryMapper::toResponse)
+                .toList();
     }
 
     @Override
-    public Optional<Category> getCategoryById(Long id) {
-        return categoryRepository.findById(id);
+    public Optional<CategoryResponse> getCategoryById(Long id) {
+        return categoryRepository.findById(id)
+                .map(categoryMapper::toResponse);
     }
 }

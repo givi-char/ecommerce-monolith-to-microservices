@@ -1,13 +1,13 @@
 package com.givi.ecommerce.productservice.service;
 
-import com.givi.ecommerce.productservice.entity.Category;
+import com.givi.ecommerce.productservice.dto.CategoryResponse;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface CategoryService {
 
-    List<Category> getAllCategories();
+    List<CategoryResponse> getAllCategories();
 
-    Optional<Category> getCategoryById(Long id);
+    Optional<CategoryResponse> getCategoryById(Long id);
 }

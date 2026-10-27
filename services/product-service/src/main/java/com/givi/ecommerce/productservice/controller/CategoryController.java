@@ -1,6 +1,6 @@
 package com.givi.ecommerce.productservice.controller;
 
-import com.givi.ecommerce.productservice.entity.Category;
+import com.givi.ecommerce.productservice.dto.CategoryResponse;
 import com.givi.ecommerce.productservice.service.CategoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +18,12 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> getAllCategories() {
+    public List<CategoryResponse> getAllCategories() {
         return categoryService.getAllCategories();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable Long id) {
         return categoryService.getCategoryById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

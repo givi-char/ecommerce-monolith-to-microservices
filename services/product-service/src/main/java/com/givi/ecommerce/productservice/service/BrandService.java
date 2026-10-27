@@ -1,13 +1,13 @@
 package com.givi.ecommerce.productservice.service;
 
-import com.givi.ecommerce.productservice.entity.Brand;
+import com.givi.ecommerce.productservice.dto.BrandResponse;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface BrandService {
 
-    List<Brand> getAllBrands();
+    List<BrandResponse> getAllBrands();
 
-    Optional<Brand> getBrandById(Long id);
+    Optional<BrandResponse> getBrandById(Long id);
 }

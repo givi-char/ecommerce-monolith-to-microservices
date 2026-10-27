@@ -1,0 +1,17 @@
+POST http://localhost:8081/api/v1/products
+Content-Type: application/json
+
+{
+  "name": "Test Gaming Mouse",
+  "description": "Test product created from Product Service",
+  "price": {
+    "amount": 99.99,
+    "currency": "USD"
+  },
+  "sku": "TEST-SKU-900001",
+  "imageUrl": "https://example.com/mouse.jpg",
+  "status": "ACTIVE",
+  "categoryId": 26,
+  "brandId": 16,
+  "sellerUserId": null
+}

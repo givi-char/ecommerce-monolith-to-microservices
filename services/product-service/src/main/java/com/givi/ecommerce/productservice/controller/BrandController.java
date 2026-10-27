@@ -1,6 +1,6 @@
 package com.givi.ecommerce.productservice.controller;
 
-import com.givi.ecommerce.productservice.entity.Brand;
+import com.givi.ecommerce.productservice.dto.BrandResponse;
 import com.givi.ecommerce.productservice.service.BrandService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +18,12 @@ public class BrandController {
     }
 
     @GetMapping
-    public List<Brand> getAllBrands() {
+    public List<BrandResponse> getAllBrands() {
         return brandService.getAllBrands();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Brand> getBrandById(@PathVariable Long id) {
+    public ResponseEntity<BrandResponse> getBrandById(@PathVariable Long id) {
         return brandService.getBrandById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

@@ -1,7 +1,9 @@
 package com.givi.ecommerce.productservice.controller;
 
+import com.givi.ecommerce.productservice.dto.ProductRequest;
 import com.givi.ecommerce.productservice.dto.ProductResponse;
 import com.givi.ecommerce.productservice.service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,8 +35,37 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
 
-        return productService.getProductById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(
+                productService.getProductById(id)
+        );
+    }
+
+    @PostMapping
+    public ResponseEntity<ProductResponse> createProduct(
+            @Valid @RequestBody ProductRequest request) {
+
+        ProductResponse createdProduct =
+                productService.createProduct(request);
+
+        return ResponseEntity.ok(createdProduct);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequest request) {
+
+        ProductResponse updatedProduct =
+                productService.updateProduct(id, request);
+
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+
+        productService.deleteProduct(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
