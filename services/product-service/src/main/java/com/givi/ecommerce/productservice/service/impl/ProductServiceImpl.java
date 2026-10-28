@@ -1,5 +1,7 @@
 package com.givi.ecommerce.productservice.service.impl;
 
+import com.givi.ecommerce.productservice.client.InventoryClient;
+import com.givi.ecommerce.productservice.dto.InventoryResponse;
 import com.givi.ecommerce.productservice.dto.ProductRequest;
 import com.givi.ecommerce.productservice.dto.ProductResponse;
 import com.givi.ecommerce.productservice.entity.Brand;
@@ -23,17 +25,20 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
+    private final InventoryClient inventoryClient;
 
     public ProductServiceImpl(
             ProductRepository productRepository,
             CategoryRepository categoryRepository,
             BrandRepository brandRepository,
-            ProductMapper productMapper
+            ProductMapper productMapper,
+            InventoryClient inventoryClient
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
         this.productMapper = productMapper;
+        this.inventoryClient = inventoryClient;
     }
 
     @Override
@@ -147,5 +152,18 @@ public class ProductServiceImpl implements ProductService {
                 );
 
         productRepository.delete(product);
+    }
+
+    @Override
+    public InventoryResponse getInventoryByProductId(Long productId) {
+
+        productRepository.findById(productId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Product not found with id: " + productId
+                        )
+                );
+
+        return inventoryClient.getInventoryByProductId(productId);
     }
 }

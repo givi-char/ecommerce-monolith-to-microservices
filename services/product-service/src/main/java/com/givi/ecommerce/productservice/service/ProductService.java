@@ -1,5 +1,6 @@
 package com.givi.ecommerce.productservice.service;
 
+import com.givi.ecommerce.productservice.dto.InventoryResponse;
 import com.givi.ecommerce.productservice.dto.ProductRequest;
 import com.givi.ecommerce.productservice.dto.ProductResponse;
 import org.springframework.data.domain.Page;
@@ -16,4 +17,6 @@ public interface ProductService {
     ProductResponse updateProduct(Long id, ProductRequest request);
 
     void deleteProduct(Long id);
+
+    InventoryResponse getInventoryByProductId(Long productId);
 }

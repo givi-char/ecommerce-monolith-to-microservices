@@ -1,5 +1,6 @@
 package com.givi.ecommerce.productservice.controller;
 
+import com.givi.ecommerce.productservice.dto.InventoryResponse;
 import com.givi.ecommerce.productservice.dto.ProductRequest;
 import com.givi.ecommerce.productservice.dto.ProductResponse;
 import com.givi.ecommerce.productservice.service.ProductService;
@@ -33,16 +34,29 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductResponse> getProductById(
+            @PathVariable Long id
+    ) {
 
         return ResponseEntity.ok(
                 productService.getProductById(id)
         );
     }
 
+    @GetMapping("/{id}/inventory")
+    public ResponseEntity<InventoryResponse> getProductInventory(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                productService.getInventoryByProductId(id)
+        );
+    }
+
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(
-            @Valid @RequestBody ProductRequest request) {
+            @Valid @RequestBody ProductRequest request
+    ) {
 
         ProductResponse createdProduct =
                 productService.createProduct(request);
@@ -53,7 +67,8 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long id,
-            @Valid @RequestBody ProductRequest request) {
+            @Valid @RequestBody ProductRequest request
+    ) {
 
         ProductResponse updatedProduct =
                 productService.updateProduct(id, request);
@@ -62,7 +77,9 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(
+            @PathVariable Long id
+    ) {
 
         productService.deleteProduct(id);
 
