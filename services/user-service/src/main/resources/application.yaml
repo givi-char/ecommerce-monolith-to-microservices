@@ -16,6 +16,13 @@ spring:
       ddl-auto: none
     show-sql: false
 
+config:
+  jwt:
+    access-secret: ${JWT_ACCESS_SECRET}
+    refresh-secret: ${JWT_REFRESH_SECRET}
+    access-token-expiration: 900000
+    refresh-token-expiration: 604800000
+
 management:
   endpoints:
     web:

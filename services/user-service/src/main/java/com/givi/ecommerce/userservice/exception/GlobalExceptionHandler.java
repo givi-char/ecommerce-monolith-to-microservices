@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -15,64 +15,83 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(
-            ResourceNotFoundException ex
+            ResourceNotFoundException exception
     ) {
 
-        Map<String, Object> error = new HashMap<>();
-
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.NOT_FOUND.value());
-        error.put("error", "Not Found");
-        error.put("message", ex.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(error);
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage()
+        );
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateResource(
-            DuplicateResourceException ex
+            DuplicateResourceException exception
     ) {
 
-        Map<String, Object> error = new HashMap<>();
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
+    }
 
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.CONFLICT.value());
-        error.put("error", "Conflict");
-        error.put("message", ex.getMessage());
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(
+            InvalidCredentialsException exception
+    ) {
 
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(error);
+        return buildResponse(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage()
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(
-            MethodArgumentNotValidException ex
+    public ResponseEntity<Map<String, Object>> handleValidation(
+            MethodArgumentNotValidException exception
     ) {
 
-        Map<String, String> validationErrors = new HashMap<>();
+        Map<String, String> validationErrors =
+                new LinkedHashMap<>();
 
-        ex.getBindingResult()
+        exception.getBindingResult()
                 .getFieldErrors()
-                .forEach(fieldError ->
+                .forEach(error ->
                         validationErrors.put(
-                                fieldError.getField(),
-                                fieldError.getDefaultMessage()
+                                error.getField(),
+                                error.getDefaultMessage()
                         )
                 );
 
-        Map<String, Object> error = new HashMap<>();
+        Map<String, Object> response =
+                new LinkedHashMap<>();
 
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        error.put("error", "Bad Request");
-        error.put("message", "Validation failed");
-        error.put("validationErrors", validationErrors);
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
+        response.put("message", "Validation failed");
+        response.put("validationErrors", validationErrors);
+        response.put("timestamp", LocalDateTime.now());
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(error);
+                .body(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> buildResponse(
+            HttpStatus status,
+            String message
+    ) {
+
+        Map<String, Object> response =
+                new LinkedHashMap<>();
+
+        response.put("status", status.value());
+        response.put("error", status.getReasonPhrase());
+        response.put("message", message);
+        response.put("timestamp", LocalDateTime.now());
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
     }
 }
