@@ -45,6 +45,22 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
+    @ExceptionHandler(InventoryServiceUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleInventoryServiceUnavailable(
+            InventoryServiceUnavailableException ex) {
+
+        Map<String, Object> error = new HashMap<>();
+
+        error.put("timestamp", LocalDateTime.now());
+        error.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
+        error.put("error", "Service Unavailable");
+        error.put("message", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(error);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(
             MethodArgumentNotValidException ex) {
