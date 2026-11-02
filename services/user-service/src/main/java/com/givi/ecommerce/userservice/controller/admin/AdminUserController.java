@@ -35,4 +35,16 @@ public class AdminUserController {
                 userService.getAllUsers(pageable)
         );
     }
+
+    @PutMapping("/{userId}/seller/approve")
+    public ResponseEntity<UserResponse> approveSeller(
+            @PathVariable Long userId
+    ) {
+
+        return ResponseEntity.ok(
+                userService.approveSellerApplication(
+                        userId
+                )
+        );
+    }
 }

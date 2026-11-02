@@ -14,9 +14,13 @@ import com.givi.ecommerce.userservice.repository.UserRepository;
 import com.givi.ecommerce.userservice.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 
 @Service
@@ -61,7 +65,9 @@ public class UserServiceImpl implements UserService {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException(
-                    "User with email " + request.getEmail() + " already exists"
+                    "User with email "
+                            + request.getEmail()
+                            + " already exists"
             );
         }
 
@@ -70,7 +76,9 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
 
         user.setPasswordHash(
-                passwordEncoder.encode(request.getPassword())
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
         );
 
         user.setFullName(request.getFullName());
@@ -78,15 +86,21 @@ public class UserServiceImpl implements UserService {
         user.setProvider(request.getProvider());
 
         user.setStatus(UserStatus.ACTIVE);
-        user.setSellerStatus(SellerStatus.NOT_A_SELLER);
+        user.setSellerStatus(
+                SellerStatus.NOT_A_SELLER
+        );
+
         user.setFailedLoginAttempts(0);
 
-        HashSet<Role> roles = new HashSet<>();
+        HashSet<Role> roles =
+                new HashSet<>();
+
         roles.add(Role.ROLE_USER);
 
         user.setRoles(roles);
 
-        User savedUser = userRepository.save(user);
+        User savedUser =
+                userRepository.save(user);
 
         return userMapper.toResponse(savedUser);
     }
@@ -105,9 +119,14 @@ public class UserServiceImpl implements UserService {
                 );
 
         if (request.getEmail() != null
-                && !request.getEmail().equals(user.getEmail())) {
+                && !request.getEmail()
+                .equals(user.getEmail())) {
 
-            if (userRepository.existsByEmail(request.getEmail())) {
+            if (userRepository
+                    .existsByEmail(
+                            request.getEmail()
+                    )) {
+
                 throw new DuplicateResourceException(
                         "User with email "
                                 + request.getEmail()
@@ -115,24 +134,35 @@ public class UserServiceImpl implements UserService {
                 );
             }
 
-            user.setEmail(request.getEmail());
+            user.setEmail(
+                    request.getEmail()
+            );
         }
 
         if (request.getFullName() != null) {
-            user.setFullName(request.getFullName());
+            user.setFullName(
+                    request.getFullName()
+            );
         }
 
         if (request.getPhone() != null) {
-            user.setPhone(request.getPhone());
+            user.setPhone(
+                    request.getPhone()
+            );
         }
 
         if (request.getStatus() != null) {
-            user.setStatus(request.getStatus());
+            user.setStatus(
+                    request.getStatus()
+            );
         }
 
-        User updatedUser = userRepository.save(user);
+        User updatedUser =
+                userRepository.save(user);
 
-        return userMapper.toResponse(updatedUser);
+        return userMapper.toResponse(
+                updatedUser
+        );
     }
 
     @Override
@@ -146,5 +176,144 @@ public class UserServiceImpl implements UserService {
                 );
 
         userRepository.delete(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse applyForSeller(
+            Long userId
+    ) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: "
+                                        + userId
+                        )
+                );
+
+        if (user.getStatus()
+                != UserStatus.ACTIVE) {
+
+            throw new IllegalStateException(
+                    "User account is not active"
+            );
+        }
+
+        SellerStatus currentStatus =
+                user.getSellerStatus();
+
+        if (currentStatus
+                == SellerStatus.REQUESTED) {
+
+            throw new IllegalStateException(
+                    "Seller application is already pending"
+            );
+        }
+
+        if (currentStatus
+                == SellerStatus.APPROVED) {
+
+            throw new IllegalStateException(
+                    "User is already an approved seller"
+            );
+        }
+
+        if (currentStatus
+                == SellerStatus.SUSPENDED) {
+
+            throw new IllegalStateException(
+                    "Suspended seller cannot submit a new application"
+            );
+        }
+
+        user.setSellerStatus(
+                SellerStatus.REQUESTED
+        );
+
+        user.setSellerRequestedAt(
+                LocalDateTime.now()
+        );
+
+        user.setSellerApprovedAt(null);
+        user.setSellerRejectionReason(null);
+        user.setApprovedByAdmin(null);
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(
+                updatedUser
+        );
+    }
+
+    @Override
+    @Transactional
+    public UserResponse approveSellerApplication(
+            Long userId
+    ) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: "
+                                        + userId
+                        )
+                );
+
+        if (user.getSellerStatus()
+                != SellerStatus.REQUESTED) {
+
+            throw new IllegalStateException(
+                    "User does not have a pending seller application"
+            );
+        }
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+
+            throw new IllegalStateException(
+                    "Admin authentication is required"
+            );
+        }
+
+        String adminEmail =
+                authentication.getName();
+
+        User admin = userRepository
+                .findByEmail(adminEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Admin user not found"
+                        )
+                );
+
+        user.setSellerStatus(
+                SellerStatus.APPROVED
+        );
+
+        user.setSellerApprovedAt(
+                LocalDateTime.now()
+        );
+
+        user.setSellerRejectionReason(null);
+
+        user.setApprovedByAdmin(admin);
+
+        user.getRoles().add(
+                Role.ROLE_SELLER
+        );
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(
+                updatedUser
+        );
     }
 }

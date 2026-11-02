@@ -17,4 +17,8 @@ public interface UserService {
     UserResponse updateUser(Long id, UpdateUserRequest request);
 
     void deleteUser(Long id);
+
+    UserResponse applyForSeller(Long userId);
+
+    UserResponse approveSellerApplication(Long userId);
 }
