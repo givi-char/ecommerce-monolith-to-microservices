@@ -1,6 +1,7 @@
 package com.givi.ecommerce.userservice.security.jwt;
 
 import com.givi.ecommerce.userservice.config.properties.JwtProperties;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -18,22 +19,32 @@ public class JwtUtil {
 
     private final JwtProperties jwtProperties;
 
-    public JwtUtil(JwtProperties jwtProperties) {
+    public JwtUtil(
+            JwtProperties jwtProperties
+    ) {
         this.jwtProperties = jwtProperties;
     }
 
     private Key getAccessSigningKey() {
-        byte[] keyBytes = jwtProperties
-                .getAccessSecret()
-                .getBytes(StandardCharsets.UTF_8);
+
+        byte[] keyBytes =
+                jwtProperties
+                        .getAccessSecret()
+                        .getBytes(
+                                StandardCharsets.UTF_8
+                        );
 
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private Key getRefreshSigningKey() {
-        byte[] keyBytes = jwtProperties
-                .getRefreshSecret()
-                .getBytes(StandardCharsets.UTF_8);
+
+        byte[] keyBytes =
+                jwtProperties
+                        .getRefreshSecret()
+                        .getBytes(
+                                StandardCharsets.UTF_8
+                        );
 
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -42,19 +53,25 @@ public class JwtUtil {
             String username,
             Collection<String> roles
     ) {
+
         Date now = new Date();
 
-        Date expiry = new Date(
-                now.getTime()
-                        + jwtProperties.getAccessTokenExpiration()
-        );
+        Date expiry =
+                new Date(
+                        now.getTime()
+                                + jwtProperties
+                                .getAccessTokenExpiration()
+                );
 
-        JwtBuilder builder = Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(now)
-                .setExpiration(expiry);
+        JwtBuilder builder =
+                Jwts.builder()
+                        .setSubject(username)
+                        .setIssuedAt(now)
+                        .setExpiration(expiry);
 
-        if (roles != null && !roles.isEmpty()) {
+        if (roles != null
+                && !roles.isEmpty()) {
+
             builder.claim(
                     "roles",
                     roles.stream().toList()
@@ -74,20 +91,27 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateRefreshToken(String username) {
+    public String generateRefreshToken(
+            String username
+    ) {
 
         Date now = new Date();
 
-        Date expiry = new Date(
-                now.getTime()
-                        + jwtProperties.getRefreshTokenExpiration()
-        );
+        Date expiry =
+                new Date(
+                        now.getTime()
+                                + jwtProperties
+                                .getRefreshTokenExpiration()
+                );
 
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
-                .claim("type", "refresh")
+                .claim(
+                        "type",
+                        "refresh"
+                )
                 .signWith(
                         getRefreshSigningKey(),
                         SignatureAlgorithm.HS256
@@ -95,46 +119,82 @@ public class JwtUtil {
                 .compact();
     }
 
-    public boolean validateAccessToken(String token) {
+    public boolean validateAccessToken(
+            String token
+    ) {
+
         try {
+
             Jwts.parserBuilder()
-                    .setSigningKey(getAccessSigningKey())
+                    .setSigningKey(
+                            getAccessSigningKey()
+                    )
                     .build()
                     .parseClaimsJws(token);
 
             return true;
 
-        } catch (JwtException | IllegalArgumentException exception) {
+        } catch (
+                JwtException
+                | IllegalArgumentException exception
+        ) {
             return false;
         }
     }
 
-    public boolean validateRefreshToken(String token) {
+    public boolean validateRefreshToken(
+            String token
+    ) {
+
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getRefreshSigningKey())
-                    .build()
-                    .parseClaimsJws(token);
 
-            return true;
+            Claims claims =
+                    Jwts.parserBuilder()
+                            .setSigningKey(
+                                    getRefreshSigningKey()
+                            )
+                            .build()
+                            .parseClaimsJws(token)
+                            .getBody();
 
-        } catch (JwtException | IllegalArgumentException exception) {
+            String type =
+                    claims.get(
+                            "type",
+                            String.class
+                    );
+
+            return "refresh".equals(type);
+
+        } catch (
+                JwtException
+                | IllegalArgumentException exception
+        ) {
             return false;
         }
     }
 
-    public String getUsernameFromAccessToken(String token) {
+    public String getUsernameFromAccessToken(
+            String token
+    ) {
+
         return Jwts.parserBuilder()
-                .setSigningKey(getAccessSigningKey())
+                .setSigningKey(
+                        getAccessSigningKey()
+                )
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
 
-    public String getUsernameFromRefreshToken(String token) {
+    public String getUsernameFromRefreshToken(
+            String token
+    ) {
+
         return Jwts.parserBuilder()
-                .setSigningKey(getRefreshSigningKey())
+                .setSigningKey(
+                        getRefreshSigningKey()
+                )
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
@@ -142,6 +202,9 @@ public class JwtUtil {
     }
 
     public long getRefreshExpirationSeconds() {
-        return jwtProperties.getRefreshTokenExpiration() / 1000;
+
+        return jwtProperties
+                .getRefreshTokenExpiration()
+                / 1000;
     }
 }

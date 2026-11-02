@@ -7,7 +7,19 @@ import com.givi.ecommerce.userservice.auth.dto.SignupResponse;
 
 public interface AuthService {
 
-    SignupResponse signup(SignupRequest request);
+    SignupResponse signup(
+            SignupRequest request
+    );
 
-    AuthResponse login(LoginRequest request);
+    AuthResponse login(
+            LoginRequest request
+    );
+
+    AuthResponse refresh(
+            String refreshToken
+    );
+
+    void logout(
+            String refreshToken
+    );
 }

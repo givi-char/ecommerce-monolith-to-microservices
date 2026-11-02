@@ -13,8 +13,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleResourceNotFound(
+    @ExceptionHandler(
+            ResourceNotFoundException.class
+    )
+    public ResponseEntity<Map<String, Object>>
+    handleResourceNotFound(
             ResourceNotFoundException exception
     ) {
 
@@ -24,8 +27,11 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<Map<String, Object>> handleDuplicateResource(
+    @ExceptionHandler(
+            DuplicateResourceException.class
+    )
+    public ResponseEntity<Map<String, Object>>
+    handleDuplicateResource(
             DuplicateResourceException exception
     ) {
 
@@ -35,8 +41,11 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(
+    @ExceptionHandler(
+            InvalidCredentialsException.class
+    )
+    public ResponseEntity<Map<String, Object>>
+    handleInvalidCredentials(
             InvalidCredentialsException exception
     ) {
 
@@ -46,15 +55,33 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(
+    @ExceptionHandler(
+            InvalidRefreshTokenException.class
+    )
+    public ResponseEntity<Map<String, Object>>
+    handleInvalidRefreshToken(
+            InvalidRefreshTokenException exception
+    ) {
+
+        return buildResponse(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(
+            MethodArgumentNotValidException.class
+    )
+    public ResponseEntity<Map<String, Object>>
+    handleValidation(
             MethodArgumentNotValidException exception
     ) {
 
         Map<String, String> validationErrors =
                 new LinkedHashMap<>();
 
-        exception.getBindingResult()
+        exception
+                .getBindingResult()
                 .getFieldErrors()
                 .forEach(error ->
                         validationErrors.put(
@@ -66,18 +93,39 @@ public class GlobalExceptionHandler {
         Map<String, Object> response =
                 new LinkedHashMap<>();
 
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
-        response.put("message", "Validation failed");
-        response.put("validationErrors", validationErrors);
-        response.put("timestamp", LocalDateTime.now());
+        response.put(
+                "status",
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+        response.put(
+                "error",
+                HttpStatus.BAD_REQUEST
+                        .getReasonPhrase()
+        );
+
+        response.put(
+                "message",
+                "Validation failed"
+        );
+
+        response.put(
+                "validationErrors",
+                validationErrors
+        );
+
+        response.put(
+                "timestamp",
+                LocalDateTime.now()
+        );
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(response);
     }
 
-    private ResponseEntity<Map<String, Object>> buildResponse(
+    private ResponseEntity<Map<String, Object>>
+    buildResponse(
             HttpStatus status,
             String message
     ) {
@@ -85,10 +133,25 @@ public class GlobalExceptionHandler {
         Map<String, Object> response =
                 new LinkedHashMap<>();
 
-        response.put("status", status.value());
-        response.put("error", status.getReasonPhrase());
-        response.put("message", message);
-        response.put("timestamp", LocalDateTime.now());
+        response.put(
+                "status",
+                status.value()
+        );
+
+        response.put(
+                "error",
+                status.getReasonPhrase()
+        );
+
+        response.put(
+                "message",
+                message
+        );
+
+        response.put(
+                "timestamp",
+                LocalDateTime.now()
+        );
 
         return ResponseEntity
                 .status(status)
