@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,17 +18,21 @@ public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService
+    ) {
         this.userService = userService;
     }
 
     @GetMapping("/paged")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<UserResponse>> getUsersPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
 
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable =
+                PageRequest.of(page, size);
 
         return ResponseEntity.ok(
                 userService.getAllUsers(pageable)
@@ -35,6 +40,10 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize(
+            "isAuthenticated() and " +
+                    "(@securityUtils.isUserId(#id) or hasRole('ADMIN'))"
+    )
     public ResponseEntity<UserResponse> getUserById(
             @PathVariable Long id
     ) {
@@ -45,6 +54,7 @@ public class UserController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> createUser(
             @Valid @RequestBody CreateUserRequest request
     ) {
@@ -55,6 +65,10 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize(
+            "isAuthenticated() and " +
+                    "(@securityUtils.isUserId(#id) or hasRole('ADMIN'))"
+    )
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserRequest request
@@ -66,6 +80,10 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize(
+            "isAuthenticated() and " +
+                    "(@securityUtils.isUserId(#id) or hasRole('ADMIN'))"
+    )
     public ResponseEntity<Void> deleteUser(
             @PathVariable Long id
     ) {
