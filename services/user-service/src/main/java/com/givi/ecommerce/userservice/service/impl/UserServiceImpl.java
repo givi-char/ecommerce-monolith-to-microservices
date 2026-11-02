@@ -41,29 +41,34 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> getAllUsers(Pageable pageable) {
+    public Page<UserResponse> getAllUsers(
+            Pageable pageable
+    ) {
 
-        return userRepository.findAll(pageable)
+        return userRepository
+                .findAll(pageable)
                 .map(userMapper::toResponse);
     }
 
     @Override
-    public UserResponse getUserById(Long id) {
+    public UserResponse getUserById(
+            Long id
+    ) {
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with id: " + id
-                        )
-                );
+        User user = getUserOrThrow(id);
 
         return userMapper.toResponse(user);
     }
 
     @Override
-    public UserResponse createUser(CreateUserRequest request) {
+    public UserResponse createUser(
+            CreateUserRequest request
+    ) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(
+                request.getEmail()
+        )) {
+
             throw new DuplicateResourceException(
                     "User with email "
                             + request.getEmail()
@@ -81,11 +86,22 @@ public class UserServiceImpl implements UserService {
                 )
         );
 
-        user.setFullName(request.getFullName());
-        user.setPhone(request.getPhone());
-        user.setProvider(request.getProvider());
+        user.setFullName(
+                request.getFullName()
+        );
 
-        user.setStatus(UserStatus.ACTIVE);
+        user.setPhone(
+                request.getPhone()
+        );
+
+        user.setProvider(
+                request.getProvider()
+        );
+
+        user.setStatus(
+                UserStatus.ACTIVE
+        );
+
         user.setSellerStatus(
                 SellerStatus.NOT_A_SELLER
         );
@@ -95,14 +111,18 @@ public class UserServiceImpl implements UserService {
         HashSet<Role> roles =
                 new HashSet<>();
 
-        roles.add(Role.ROLE_USER);
+        roles.add(
+                Role.ROLE_USER
+        );
 
         user.setRoles(roles);
 
         User savedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(savedUser);
+        return userMapper.toResponse(
+                savedUser
+        );
     }
 
     @Override
@@ -111,12 +131,8 @@ public class UserServiceImpl implements UserService {
             UpdateUserRequest request
     ) {
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with id: " + id
-                        )
-                );
+        User user =
+                getUserOrThrow(id);
 
         if (request.getEmail() != null
                 && !request.getEmail()
@@ -140,18 +156,21 @@ public class UserServiceImpl implements UserService {
         }
 
         if (request.getFullName() != null) {
+
             user.setFullName(
                     request.getFullName()
             );
         }
 
         if (request.getPhone() != null) {
+
             user.setPhone(
                     request.getPhone()
             );
         }
 
         if (request.getStatus() != null) {
+
             user.setStatus(
                     request.getStatus()
             );
@@ -166,14 +185,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(Long id) {
+    public void deleteUser(
+            Long id
+    ) {
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with id: " + id
-                        )
-                );
+        User user =
+                getUserOrThrow(id);
 
         userRepository.delete(user);
     }
@@ -184,13 +201,8 @@ public class UserServiceImpl implements UserService {
             Long userId
     ) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with id: "
-                                        + userId
-                        )
-                );
+        User user =
+                getUserOrThrow(userId);
 
         if (user.getStatus()
                 != UserStatus.ACTIVE) {
@@ -253,13 +265,8 @@ public class UserServiceImpl implements UserService {
             Long userId
     ) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with id: "
-                                        + userId
-                        )
-                );
+        User user =
+                getUserOrThrow(userId);
 
         if (user.getSellerStatus()
                 != SellerStatus.REQUESTED) {
@@ -269,29 +276,8 @@ public class UserServiceImpl implements UserService {
             );
         }
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
-
-        if (authentication == null
-                || !authentication.isAuthenticated()) {
-
-            throw new IllegalStateException(
-                    "Admin authentication is required"
-            );
-        }
-
-        String adminEmail =
-                authentication.getName();
-
-        User admin = userRepository
-                .findByEmail(adminEmail)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Admin user not found"
-                        )
-                );
+        User admin =
+                getCurrentAuthenticatedUser();
 
         user.setSellerStatus(
                 SellerStatus.APPROVED
@@ -299,6 +285,131 @@ public class UserServiceImpl implements UserService {
 
         user.setSellerApprovedAt(
                 LocalDateTime.now()
+        );
+
+        user.setSellerRejectionReason(null);
+        user.setApprovedByAdmin(admin);
+
+        user.getRoles().add(
+                Role.ROLE_SELLER
+        );
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(
+                updatedUser
+        );
+    }
+
+    @Override
+    @Transactional
+    public UserResponse rejectSellerApplication(
+            Long userId,
+            String rejectionReason
+    ) {
+
+        User user =
+                getUserOrThrow(userId);
+
+        if (user.getSellerStatus()
+                != SellerStatus.REQUESTED) {
+
+            throw new IllegalStateException(
+                    "User seller status must be REQUESTED to reject"
+            );
+        }
+
+        User admin =
+                getCurrentAuthenticatedUser();
+
+        user.setSellerStatus(
+                SellerStatus.REJECTED
+        );
+
+        user.setSellerRejectionReason(
+                rejectionReason
+        );
+
+        user.setApprovedByAdmin(admin);
+
+        user.getRoles().remove(
+                Role.ROLE_SELLER
+        );
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(
+                updatedUser
+        );
+    }
+
+    @Override
+    @Transactional
+    public UserResponse suspendSeller(
+            Long userId,
+            String suspensionReason
+    ) {
+
+        User user =
+                getUserOrThrow(userId);
+
+        if (user.getSellerStatus()
+                != SellerStatus.APPROVED) {
+
+            throw new IllegalStateException(
+                    "User must have APPROVED seller status to suspend"
+            );
+        }
+
+        User admin =
+                getCurrentAuthenticatedUser();
+
+        user.setSellerStatus(
+                SellerStatus.SUSPENDED
+        );
+
+        user.setSellerRejectionReason(
+                suspensionReason
+        );
+
+        user.setApprovedByAdmin(admin);
+
+        user.getRoles().remove(
+                Role.ROLE_SELLER
+        );
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(
+                updatedUser
+        );
+    }
+
+    @Override
+    @Transactional
+    public UserResponse activateSuspendedSeller(
+            Long userId
+    ) {
+
+        User user =
+                getUserOrThrow(userId);
+
+        if (user.getSellerStatus()
+                != SellerStatus.SUSPENDED) {
+
+            throw new IllegalStateException(
+                    "User must have SUSPENDED seller status to activate"
+            );
+        }
+
+        User admin =
+                getCurrentAuthenticatedUser();
+
+        user.setSellerStatus(
+                SellerStatus.APPROVED
         );
 
         user.setSellerRejectionReason(null);
@@ -315,5 +426,46 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(
                 updatedUser
         );
+    }
+
+    private User getUserOrThrow(
+            Long userId
+    ) {
+
+        return userRepository
+                .findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: "
+                                        + userId
+                        )
+                );
+    }
+
+    private User getCurrentAuthenticatedUser() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+
+            throw new IllegalStateException(
+                    "Admin authentication is required"
+            );
+        }
+
+        String email =
+                authentication.getName();
+
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Authenticated user not found"
+                        )
+                );
     }
 }

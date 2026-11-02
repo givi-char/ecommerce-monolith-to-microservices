@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
@@ -42,9 +44,58 @@ public class AdminUserController {
     ) {
 
         return ResponseEntity.ok(
-                userService.approveSellerApplication(
-                        userId
+                userService
+                        .approveSellerApplication(
+                                userId
+                        )
+        );
+    }
+
+    @PutMapping("/{userId}/seller/reject")
+    public ResponseEntity<UserResponse> rejectSeller(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> body
+    ) {
+
+        String reason =
+                body.get("reason");
+
+        return ResponseEntity.ok(
+                userService
+                        .rejectSellerApplication(
+                                userId,
+                                reason
+                        )
+        );
+    }
+
+    @PutMapping("/{userId}/seller/suspend")
+    public ResponseEntity<UserResponse> suspendSeller(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> body
+    ) {
+
+        String reason =
+                body.get("reason");
+
+        return ResponseEntity.ok(
+                userService.suspendSeller(
+                        userId,
+                        reason
                 )
+        );
+    }
+
+    @PutMapping("/{userId}/seller/reactivate")
+    public ResponseEntity<UserResponse> reactivateSeller(
+            @PathVariable Long userId
+    ) {
+
+        return ResponseEntity.ok(
+                userService
+                        .activateSuspendedSeller(
+                                userId
+                        )
         );
     }
 }

@@ -21,4 +21,18 @@ public interface UserService {
     UserResponse applyForSeller(Long userId);
 
     UserResponse approveSellerApplication(Long userId);
+
+    UserResponse rejectSellerApplication(
+            Long userId,
+            String rejectionReason
+    );
+
+    UserResponse suspendSeller(
+            Long userId,
+            String suspensionReason
+    );
+
+    UserResponse activateSuspendedSeller(
+            Long userId
+    );
 }
