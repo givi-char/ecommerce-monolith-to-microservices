@@ -23,6 +23,10 @@ config:
     access-token-expiration: 900000
     refresh-token-expiration: 604800000
 
+  security:
+    max-failed-attempts: 5
+    lockout-duration-minutes: 15
+
 management:
   endpoints:
     web:
