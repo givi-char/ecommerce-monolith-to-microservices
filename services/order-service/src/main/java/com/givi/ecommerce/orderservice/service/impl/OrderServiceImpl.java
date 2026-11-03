@@ -57,14 +57,19 @@ public class OrderServiceImpl
     @Override
     @Transactional
     public OrderResponse createOrder(
+            Long userId,
             CreateOrderRequest request
     ) {
 
         Order order =
                 new Order();
 
+        /*
+         * userId უკვე JWT-დან მოდის
+         * და არა request body-დან.
+         */
         order.setUserId(
-                request.getUserId()
+                userId
         );
 
         order.setStatus(
@@ -83,19 +88,11 @@ public class OrderServiceImpl
         for (CreateOrderItemRequest itemRequest
                 : request.getItems()) {
 
-            /*
-             * Product Service-დან მოგვაქვს
-             * პროდუქტის რეალური ინფორმაცია.
-             */
             ProductResponse product =
                     productClient.getProductById(
                             itemRequest.getProductId()
                     );
 
-            /*
-             * მხოლოდ ACTIVE პროდუქტის
-             * შეკვეთა შეიძლება.
-             */
             if (product.getStatus() == null
                     || !"ACTIVE".equalsIgnoreCase(
                     product.getStatus()
@@ -108,10 +105,6 @@ public class OrderServiceImpl
                 );
             }
 
-            /*
-             * Product Service-დან დაბრუნებული
-             * ფასი აუცილებელია.
-             */
             if (product.getPrice() == null
                     || product.getPrice().getAmount() == null
                     || product.getPrice().getCurrency() == null) {
@@ -134,20 +127,12 @@ public class OrderServiceImpl
                             .getCurrency()
                             .toUpperCase();
 
-            /*
-             * პირველი პროდუქტის currency ხდება
-             * მთელი order-ის currency.
-             */
             if (orderCurrency == null) {
 
                 orderCurrency =
                         productCurrency;
             }
 
-            /*
-             * ერთი order-ის ყველა პროდუქტი
-             * ერთ currency-ში უნდა იყოს.
-             */
             if (!orderCurrency.equals(
                     productCurrency
             )) {
@@ -158,10 +143,6 @@ public class OrderServiceImpl
                 );
             }
 
-            /*
-             * პროდუქტის არსებობისა და ფასის
-             * შემოწმების შემდეგ ვამცირებთ stock-ს.
-             */
             inventoryClient.reduceStock(
                     itemRequest.getProductId(),
                     itemRequest.getQuantity()
@@ -182,10 +163,6 @@ public class OrderServiceImpl
                     itemRequest.getQuantity()
             );
 
-            /*
-             * ფასი უკვე request-იდან აღარ მოდის.
-             * ვიყენებთ Product Service-ის ფასს.
-             */
             orderItem.setPrice(
                     new Money(
                             productPrice,

@@ -249,6 +249,7 @@ public class AuthServiceImpl implements AuthService {
 
         String accessToken =
                 jwtUtil.generateAccessToken(
+                        user.getId(),
                         user.getEmail(),
                         tokenRoles
                 );

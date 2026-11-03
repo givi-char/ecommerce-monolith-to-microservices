@@ -50,6 +50,7 @@ public class JwtUtil {
     }
 
     public String generateAccessToken(
+            Long userId,
             String username,
             Collection<String> roles
     ) {
@@ -67,7 +68,11 @@ public class JwtUtil {
                 Jwts.builder()
                         .setSubject(username)
                         .setIssuedAt(now)
-                        .setExpiration(expiry);
+                        .setExpiration(expiry)
+                        .claim(
+                                "userId",
+                                userId
+                        );
 
         if (roles != null
                 && !roles.isEmpty()) {
@@ -185,6 +190,26 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    public Long getUserIdFromAccessToken(
+            String token
+    ) {
+
+        Number userId =
+                Jwts.parserBuilder()
+                        .setSigningKey(
+                                getAccessSigningKey()
+                        )
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody()
+                        .get(
+                                "userId",
+                                Number.class
+                        );
+
+        return userId.longValue();
     }
 
     public String getUsernameFromRefreshToken(
