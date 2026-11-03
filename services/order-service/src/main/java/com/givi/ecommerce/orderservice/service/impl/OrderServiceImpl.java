@@ -1,10 +1,12 @@
 package com.givi.ecommerce.orderservice.service.impl;
 
 import com.givi.ecommerce.orderservice.client.InventoryClient;
+import com.givi.ecommerce.orderservice.client.ProductClient;
 import com.givi.ecommerce.orderservice.common.Money;
 import com.givi.ecommerce.orderservice.dto.CreateOrderItemRequest;
 import com.givi.ecommerce.orderservice.dto.CreateOrderRequest;
 import com.givi.ecommerce.orderservice.dto.OrderResponse;
+import com.givi.ecommerce.orderservice.dto.ProductResponse;
 import com.givi.ecommerce.orderservice.entity.Order;
 import com.givi.ecommerce.orderservice.entity.OrderItem;
 import com.givi.ecommerce.orderservice.enums.OrderStatus;
@@ -14,8 +16,10 @@ import com.givi.ecommerce.orderservice.repository.OrderRepository;
 import com.givi.ecommerce.orderservice.service.OrderService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -28,11 +32,13 @@ public class OrderServiceImpl
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final InventoryClient inventoryClient;
+    private final ProductClient productClient;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
             OrderMapper orderMapper,
-            InventoryClient inventoryClient
+            InventoryClient inventoryClient,
+            ProductClient productClient
     ) {
 
         this.orderRepository =
@@ -43,6 +49,9 @@ public class OrderServiceImpl
 
         this.inventoryClient =
                 inventoryClient;
+
+        this.productClient =
+                productClient;
     }
 
     @Override
@@ -74,26 +83,85 @@ public class OrderServiceImpl
         for (CreateOrderItemRequest itemRequest
                 : request.getItems()) {
 
-            String itemCurrency =
-                    itemRequest
+            /*
+             * Product Service-დან მოგვაქვს
+             * პროდუქტის რეალური ინფორმაცია.
+             */
+            ProductResponse product =
+                    productClient.getProductById(
+                            itemRequest.getProductId()
+                    );
+
+            /*
+             * მხოლოდ ACTIVE პროდუქტის
+             * შეკვეთა შეიძლება.
+             */
+            if (product.getStatus() == null
+                    || !"ACTIVE".equalsIgnoreCase(
+                    product.getStatus()
+            )) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Product is not active: "
+                                + itemRequest.getProductId()
+                );
+            }
+
+            /*
+             * Product Service-დან დაბრუნებული
+             * ფასი აუცილებელია.
+             */
+            if (product.getPrice() == null
+                    || product.getPrice().getAmount() == null
+                    || product.getPrice().getCurrency() == null) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY,
+                        "Product Service returned invalid price for product: "
+                                + itemRequest.getProductId()
+                );
+            }
+
+            BigDecimal productPrice =
+                    product
+                            .getPrice()
+                            .getAmount();
+
+            String productCurrency =
+                    product
+                            .getPrice()
                             .getCurrency()
                             .toUpperCase();
 
+            /*
+             * პირველი პროდუქტის currency ხდება
+             * მთელი order-ის currency.
+             */
             if (orderCurrency == null) {
 
                 orderCurrency =
-                        itemCurrency;
+                        productCurrency;
             }
 
+            /*
+             * ერთი order-ის ყველა პროდუქტი
+             * ერთ currency-ში უნდა იყოს.
+             */
             if (!orderCurrency.equals(
-                    itemCurrency
+                    productCurrency
             )) {
 
-                throw new IllegalArgumentException(
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
                         "All order items must use the same currency"
                 );
             }
 
+            /*
+             * პროდუქტის არსებობისა და ფასის
+             * შემოწმების შემდეგ ვამცირებთ stock-ს.
+             */
             inventoryClient.reduceStock(
                     itemRequest.getProductId(),
                     itemRequest.getQuantity()
@@ -114,11 +182,14 @@ public class OrderServiceImpl
                     itemRequest.getQuantity()
             );
 
+            /*
+             * ფასი უკვე request-იდან აღარ მოდის.
+             * ვიყენებთ Product Service-ის ფასს.
+             */
             orderItem.setPrice(
                     new Money(
-                            itemRequest
-                                    .getPriceAmount(),
-                            itemCurrency
+                            productPrice,
+                            productCurrency
                     )
             );
 
@@ -127,14 +198,11 @@ public class OrderServiceImpl
             );
 
             BigDecimal itemTotal =
-                    itemRequest
-                            .getPriceAmount()
-                            .multiply(
-                                    BigDecimal.valueOf(
-                                            itemRequest
-                                                    .getQuantity()
-                                    )
-                            );
+                    productPrice.multiply(
+                            BigDecimal.valueOf(
+                                    itemRequest.getQuantity()
+                            )
+                    );
 
             totalAmount =
                     totalAmount.add(
