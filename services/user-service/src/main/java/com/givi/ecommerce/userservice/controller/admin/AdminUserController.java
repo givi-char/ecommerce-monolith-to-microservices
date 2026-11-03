@@ -25,9 +25,13 @@ public class AdminUserController {
     }
 
     @GetMapping("/paged")
-    public ResponseEntity<Page<UserResponse>> getUsersPaged(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+    public ResponseEntity<Page<UserResponse>>
+    getUsersPaged(
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "20")
+            int size
     ) {
 
         Pageable pageable =
@@ -38,8 +42,69 @@ public class AdminUserController {
         );
     }
 
+    @GetMapping("/sellers/pending")
+    public ResponseEntity<Page<UserResponse>>
+    getPendingSellerApplications(
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "20")
+            int size
+    ) {
+
+        Pageable pageable =
+                PageRequest.of(page, size);
+
+        return ResponseEntity.ok(
+                userService
+                        .getPendingSellerApplications(
+                                pageable
+                        )
+        );
+    }
+
+    @PutMapping("/{userId}/activate")
+    public ResponseEntity<UserResponse>
+    activateUser(
+            @PathVariable Long userId
+    ) {
+
+        return ResponseEntity.ok(
+                userService.activateUser(
+                        userId
+                )
+        );
+    }
+
+    @PutMapping("/{userId}/deactivate")
+    public ResponseEntity<UserResponse>
+    deactivateUser(
+            @PathVariable Long userId
+    ) {
+
+        return ResponseEntity.ok(
+                userService.deactivateUser(
+                        userId
+                )
+        );
+    }
+
+    @PutMapping("/{userId}/unlock")
+    public ResponseEntity<UserResponse>
+    unlockUser(
+            @PathVariable Long userId
+    ) {
+
+        return ResponseEntity.ok(
+                userService.unlockUser(
+                        userId
+                )
+        );
+    }
+
     @PutMapping("/{userId}/seller/approve")
-    public ResponseEntity<UserResponse> approveSeller(
+    public ResponseEntity<UserResponse>
+    approveSeller(
             @PathVariable Long userId
     ) {
 
@@ -52,7 +117,8 @@ public class AdminUserController {
     }
 
     @PutMapping("/{userId}/seller/reject")
-    public ResponseEntity<UserResponse> rejectSeller(
+    public ResponseEntity<UserResponse>
+    rejectSeller(
             @PathVariable Long userId,
             @RequestBody Map<String, String> body
     ) {
@@ -70,7 +136,8 @@ public class AdminUserController {
     }
 
     @PutMapping("/{userId}/seller/suspend")
-    public ResponseEntity<UserResponse> suspendSeller(
+    public ResponseEntity<UserResponse>
+    suspendSeller(
             @PathVariable Long userId,
             @RequestBody Map<String, String> body
     ) {
@@ -87,7 +154,8 @@ public class AdminUserController {
     }
 
     @PutMapping("/{userId}/seller/reactivate")
-    public ResponseEntity<UserResponse> reactivateSeller(
+    public ResponseEntity<UserResponse>
+    reactivateSeller(
             @PathVariable Long userId
     ) {
 

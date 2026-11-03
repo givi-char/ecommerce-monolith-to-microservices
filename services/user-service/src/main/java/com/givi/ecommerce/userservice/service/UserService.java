@@ -35,4 +35,14 @@ public interface UserService {
     UserResponse activateSuspendedSeller(
             Long userId
     );
+
+    Page<UserResponse> getPendingSellerApplications(
+            Pageable pageable
+    );
+
+    UserResponse activateUser(Long userId);
+
+    UserResponse deactivateUser(Long userId);
+
+    UserResponse unlockUser(Long userId);
 }

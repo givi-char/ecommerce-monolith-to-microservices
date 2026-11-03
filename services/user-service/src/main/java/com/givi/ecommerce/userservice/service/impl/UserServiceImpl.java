@@ -41,34 +41,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> getAllUsers(
-            Pageable pageable
-    ) {
-
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
         return userRepository
                 .findAll(pageable)
                 .map(userMapper::toResponse);
     }
 
     @Override
-    public UserResponse getUserById(
-            Long id
-    ) {
-
+    public UserResponse getUserById(Long id) {
         User user = getUserOrThrow(id);
-
         return userMapper.toResponse(user);
     }
 
     @Override
-    public UserResponse createUser(
-            CreateUserRequest request
-    ) {
+    public UserResponse createUser(CreateUserRequest request) {
 
-        if (userRepository.existsByEmail(
-                request.getEmail()
-        )) {
-
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException(
                     "User with email "
                             + request.getEmail()
@@ -79,50 +67,31 @@ public class UserServiceImpl implements UserService {
         User user = new User();
 
         user.setEmail(request.getEmail());
-
         user.setPasswordHash(
                 passwordEncoder.encode(
                         request.getPassword()
                 )
         );
-
-        user.setFullName(
-                request.getFullName()
-        );
-
-        user.setPhone(
-                request.getPhone()
-        );
-
-        user.setProvider(
-                request.getProvider()
-        );
-
-        user.setStatus(
-                UserStatus.ACTIVE
-        );
-
+        user.setFullName(request.getFullName());
+        user.setPhone(request.getPhone());
+        user.setProvider(request.getProvider());
+        user.setStatus(UserStatus.ACTIVE);
         user.setSellerStatus(
                 SellerStatus.NOT_A_SELLER
         );
-
         user.setFailedLoginAttempts(0);
 
         HashSet<Role> roles =
                 new HashSet<>();
 
-        roles.add(
-                Role.ROLE_USER
-        );
+        roles.add(Role.ROLE_USER);
 
         user.setRoles(roles);
 
         User savedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(
-                savedUser
-        );
+        return userMapper.toResponse(savedUser);
     }
 
     @Override
@@ -131,17 +100,15 @@ public class UserServiceImpl implements UserService {
             UpdateUserRequest request
     ) {
 
-        User user =
-                getUserOrThrow(id);
+        User user = getUserOrThrow(id);
 
         if (request.getEmail() != null
                 && !request.getEmail()
                 .equals(user.getEmail())) {
 
-            if (userRepository
-                    .existsByEmail(
-                            request.getEmail()
-                    )) {
+            if (userRepository.existsByEmail(
+                    request.getEmail()
+            )) {
 
                 throw new DuplicateResourceException(
                         "User with email "
@@ -150,27 +117,22 @@ public class UserServiceImpl implements UserService {
                 );
             }
 
-            user.setEmail(
-                    request.getEmail()
-            );
+            user.setEmail(request.getEmail());
         }
 
         if (request.getFullName() != null) {
-
             user.setFullName(
                     request.getFullName()
             );
         }
 
         if (request.getPhone() != null) {
-
             user.setPhone(
                     request.getPhone()
             );
         }
 
         if (request.getStatus() != null) {
-
             user.setStatus(
                     request.getStatus()
             );
@@ -179,19 +141,12 @@ public class UserServiceImpl implements UserService {
         User updatedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(
-                updatedUser
-        );
+        return userMapper.toResponse(updatedUser);
     }
 
     @Override
-    public void deleteUser(
-            Long id
-    ) {
-
-        User user =
-                getUserOrThrow(id);
-
+    public void deleteUser(Long id) {
+        User user = getUserOrThrow(id);
         userRepository.delete(user);
     }
 
@@ -201,8 +156,7 @@ public class UserServiceImpl implements UserService {
             Long userId
     ) {
 
-        User user =
-                getUserOrThrow(userId);
+        User user = getUserOrThrow(userId);
 
         if (user.getStatus()
                 != UserStatus.ACTIVE) {
@@ -254,9 +208,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(
-                updatedUser
-        );
+        return userMapper.toResponse(updatedUser);
     }
 
     @Override
@@ -265,8 +217,7 @@ public class UserServiceImpl implements UserService {
             Long userId
     ) {
 
-        User user =
-                getUserOrThrow(userId);
+        User user = getUserOrThrow(userId);
 
         if (user.getSellerStatus()
                 != SellerStatus.REQUESTED) {
@@ -297,9 +248,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(
-                updatedUser
-        );
+        return userMapper.toResponse(updatedUser);
     }
 
     @Override
@@ -309,8 +258,7 @@ public class UserServiceImpl implements UserService {
             String rejectionReason
     ) {
 
-        User user =
-                getUserOrThrow(userId);
+        User user = getUserOrThrow(userId);
 
         if (user.getSellerStatus()
                 != SellerStatus.REQUESTED) {
@@ -340,9 +288,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(
-                updatedUser
-        );
+        return userMapper.toResponse(updatedUser);
     }
 
     @Override
@@ -352,8 +298,7 @@ public class UserServiceImpl implements UserService {
             String suspensionReason
     ) {
 
-        User user =
-                getUserOrThrow(userId);
+        User user = getUserOrThrow(userId);
 
         if (user.getSellerStatus()
                 != SellerStatus.APPROVED) {
@@ -383,9 +328,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(
-                updatedUser
-        );
+        return userMapper.toResponse(updatedUser);
     }
 
     @Override
@@ -394,8 +337,7 @@ public class UserServiceImpl implements UserService {
             Long userId
     ) {
 
-        User user =
-                getUserOrThrow(userId);
+        User user = getUserOrThrow(userId);
 
         if (user.getSellerStatus()
                 != SellerStatus.SUSPENDED) {
@@ -413,7 +355,6 @@ public class UserServiceImpl implements UserService {
         );
 
         user.setSellerRejectionReason(null);
-
         user.setApprovedByAdmin(admin);
 
         user.getRoles().add(
@@ -423,9 +364,74 @@ public class UserServiceImpl implements UserService {
         User updatedUser =
                 userRepository.save(user);
 
-        return userMapper.toResponse(
-                updatedUser
+        return userMapper.toResponse(updatedUser);
+    }
+
+    @Override
+    public Page<UserResponse>
+    getPendingSellerApplications(
+            Pageable pageable
+    ) {
+
+        return userRepository
+                .findBySellerStatus(
+                        SellerStatus.REQUESTED,
+                        pageable
+                )
+                .map(userMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse activateUser(
+            Long userId
+    ) {
+
+        User user = getUserOrThrow(userId);
+
+        user.setStatus(
+                UserStatus.ACTIVE
         );
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse deactivateUser(
+            Long userId
+    ) {
+
+        User user = getUserOrThrow(userId);
+
+        user.setStatus(
+                UserStatus.INACTIVE
+        );
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse unlockUser(
+            Long userId
+    ) {
+
+        User user = getUserOrThrow(userId);
+
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+
+        User updatedUser =
+                userRepository.save(user);
+
+        return userMapper.toResponse(updatedUser);
     }
 
     private User getUserOrThrow(
@@ -450,7 +456,8 @@ public class UserServiceImpl implements UserService {
                         .getAuthentication();
 
         if (authentication == null
-                || !authentication.isAuthenticated()) {
+                || !authentication
+                .isAuthenticated()) {
 
             throw new IllegalStateException(
                     "Admin authentication is required"
