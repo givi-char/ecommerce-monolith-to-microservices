@@ -1,6 +1,5 @@
 package com.givi.ecommerce.userservice.security.authorization;
 
-import com.givi.ecommerce.userservice.entity.User;
 import com.givi.ecommerce.userservice.repository.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +18,10 @@ public class SecurityUtils {
 
     public boolean isUserId(Long userId) {
 
+        if (userId == null) {
+            return false;
+        }
+
         Authentication authentication =
                 SecurityContextHolder
                         .getContext()
@@ -26,24 +29,39 @@ public class SecurityUtils {
 
         if (authentication == null
                 || !authentication.isAuthenticated()) {
-
             return false;
         }
 
-        String email = authentication.getName();
+        String currentUserEmail =
+                authentication.getName();
 
-        if (email == null
-                || email.isBlank()
-                || "anonymousUser".equals(email)) {
-
+        if (currentUserEmail == null
+                || currentUserEmail.isBlank()) {
             return false;
         }
 
-        User user = userRepository
-                .findByEmail(email)
-                .orElse(null);
+        return userRepository
+                .findById(userId)
+                .map(user ->
+                        currentUserEmail.equalsIgnoreCase(
+                                user.getEmail()
+                        )
+                )
+                .orElse(false);
+    }
 
-        return user != null
-                && user.getId().equals(userId);
+    public String getCurrentUserEmail() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        return authentication.getName();
     }
 }
