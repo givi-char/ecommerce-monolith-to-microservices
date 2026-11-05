@@ -1,0 +1,88 @@
+services:
+
+  product-service:
+    image: ecommerce-product-service
+    container_name: ecommerce-product-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_NAME: ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - ecommerce-network
+
+  inventory-service:
+    image: ecommerce-inventory-service
+    container_name: ecommerce-inventory-service
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_NAME: ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - ecommerce-network
+
+  user-service:
+    image: ecommerce-user-service
+    container_name: ecommerce-user-service
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_NAME: ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    networks:
+      - ecommerce-network
+
+  order-service:
+    image: ecommerce-order-service
+    container_name: ecommerce-order-service
+    ports:
+      - "8084:8084"
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_NAME: ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+    depends_on:
+      - product-service
+      - inventory-service
+      - user-service
+    networks:
+      - ecommerce-network
+
+  api-gateway:
+    image: ecommerce-api-gateway
+    container_name: ecommerce-api-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      USER_SERVICE_URL: http://user-service:8083
+      ORDER_SERVICE_URL: http://order-service:8084
+    depends_on:
+      - product-service
+      - inventory-service
+      - user-service
+      - order-service
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
