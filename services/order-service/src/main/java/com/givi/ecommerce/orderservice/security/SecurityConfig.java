@@ -38,7 +38,8 @@ public class SecurityConfig {
                         auth
                                 .requestMatchers(
                                         "/actuator/health",
-                                        "/actuator/info"
+                                        "/actuator/info",
+                                        "/error"
                                 )
                                 .permitAll()
 
