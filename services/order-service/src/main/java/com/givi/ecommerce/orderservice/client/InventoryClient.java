@@ -5,8 +5,10 @@ import com.givi.ecommerce.orderservice.dto.UpdateStockRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 @Component
@@ -18,25 +20,20 @@ public class InventoryClient {
             @Value("${services.inventory.base-url}")
             String inventoryBaseUrl
     ) {
-
-        this.restClient =
-                RestClient.builder()
-                        .baseUrl(inventoryBaseUrl)
-                        .build();
+        this.restClient = RestClient.builder()
+                .baseUrl(inventoryBaseUrl)
+                .build();
     }
 
     public InventoryResponse reduceStock(
             Long productId,
             Integer quantity
     ) {
-
         UpdateStockRequest request =
                 new UpdateStockRequest(quantity);
 
         try {
-
-            return restClient
-                    .put()
+            return restClient.put()
                     .uri(
                             "/api/v1/inventory/{productId}/reduce",
                             productId
@@ -45,11 +42,53 @@ public class InventoryClient {
                     .retrieve()
                     .body(InventoryResponse.class);
 
-        } catch (RestClientException exception) {
+        } catch (RestClientResponseException exception) {
+
+            int status = exception.getStatusCode().value();
+
+            if (status == 409) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Insufficient stock for product id: " + productId,
+                        exception
+                );
+            }
+
+            if (status == 404) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Inventory not found for product id: " + productId,
+                        exception
+                );
+            }
+
+            if (status == 400) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Invalid stock reduction request",
+                        exception
+                );
+            }
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Inventory Service returned an unexpected error",
+                    exception
+            );
+
+        } catch (ResourceAccessException exception) {
 
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "Inventory Service is currently unavailable",
+                    "Cannot connect to Inventory Service",
+                    exception
+            );
+
+        } catch (RestClientException exception) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Could not process Inventory Service response",
                     exception
             );
         }
