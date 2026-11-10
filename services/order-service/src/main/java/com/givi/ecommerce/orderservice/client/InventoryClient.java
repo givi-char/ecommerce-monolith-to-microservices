@@ -29,14 +29,30 @@ public class InventoryClient {
             Long productId,
             Integer quantity
     ) {
+        return updateStock(productId, quantity, "reduce");
+    }
+
+    public InventoryResponse increaseStock(
+            Long productId,
+            Integer quantity
+    ) {
+        return updateStock(productId, quantity, "increase");
+    }
+
+    private InventoryResponse updateStock(
+            Long productId,
+            Integer quantity,
+            String operation
+    ) {
         UpdateStockRequest request =
                 new UpdateStockRequest(quantity);
 
         try {
             return restClient.put()
                     .uri(
-                            "/api/v1/inventory/{productId}/reduce",
-                            productId
+                            "/api/v1/inventory/{productId}/{operation}",
+                            productId,
+                            operation
                     )
                     .body(request)
                     .retrieve()
@@ -49,7 +65,7 @@ public class InventoryClient {
             if (status == 409) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT,
-                        "Insufficient stock for product id: " + productId,
+                        "Inventory conflict for product id: " + productId,
                         exception
                 );
             }
@@ -65,7 +81,7 @@ public class InventoryClient {
             if (status == 400) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "Invalid stock reduction request",
+                        "Invalid stock update request",
                         exception
                 );
             }
