@@ -9,6 +9,7 @@ import com.givi.ecommerce.inventoryservice.mapper.InventoryMapper;
 import com.givi.ecommerce.inventoryservice.repository.InventoryRepository;
 import com.givi.ecommerce.inventoryservice.service.InventoryService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class InventoryServiceImpl implements InventoryService {
@@ -25,12 +26,16 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public InventoryResponse getInventoryByProductId(Long productId) {
-
-        Inventory inventory = inventoryRepository.findByProductId(productId)
+    @Transactional(readOnly = true)
+    public InventoryResponse getInventoryByProductId(
+            Long productId
+    ) {
+        Inventory inventory = inventoryRepository
+                .findByProductId(productId)
                 .orElseThrow(() ->
                         new InventoryNotFoundException(
-                                "Inventory not found for product id: " + productId
+                                "Inventory not found for product id: "
+                                        + productId
                         )
                 );
 
@@ -38,17 +43,12 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional
     public InventoryResponse increaseStock(
             Long productId,
             UpdateStockRequest request
     ) {
-
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() ->
-                        new InventoryNotFoundException(
-                                "Inventory not found for product id: " + productId
-                        )
-                );
+        Inventory inventory = findInventoryForUpdate(productId);
 
         inventory.setQuantity(
                 inventory.getQuantity() + request.getQuantity()
@@ -61,17 +61,12 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional
     public InventoryResponse reduceStock(
             Long productId,
             UpdateStockRequest request
     ) {
-
-        Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() ->
-                        new InventoryNotFoundException(
-                                "Inventory not found for product id: " + productId
-                        )
-                );
+        Inventory inventory = findInventoryForUpdate(productId);
 
         if (inventory.getQuantity() < request.getQuantity()) {
             throw new InsufficientStockException(
@@ -87,5 +82,16 @@ public class InventoryServiceImpl implements InventoryService {
                 inventoryRepository.save(inventory);
 
         return inventoryMapper.toResponse(updatedInventory);
+    }
+
+    private Inventory findInventoryForUpdate(Long productId) {
+        return inventoryRepository
+                .findByProductIdForUpdate(productId)
+                .orElseThrow(() ->
+                        new InventoryNotFoundException(
+                                "Inventory not found for product id: "
+                                        + productId
+                        )
+                );
     }
 }
